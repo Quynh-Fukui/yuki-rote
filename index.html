@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>雪の日ルート</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f4e79">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="雪の日ルート">
+<style>
+:root{color-scheme:light dark;--bg:#eef2f7;--card:#fff;--ink:#14213d;--sub:#5d6a82;--line:#dde4ee;--navy:#14213d;--go:#1d7f46;--care:#a86200;--stop:#c62828}
+@media(prefers-color-scheme:dark){:root{--bg:#0b111d;--card:#151d2e;--ink:#e8eef8;--sub:#9babc4;--line:#28334a;--navy:#cfdaf0;--go:#52c98f;--care:#f2b24c;--stop:#ff7070}}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.6 "Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif}
+.app{max-width:440px;margin:0 auto;padding:18px 16px 32px}
+.top{background:var(--navy);color:var(--bg);border-radius:18px;padding:16px 18px}
+.top h1{margin:0;font-size:26px;line-height:1.2}
+.top p{margin:4px 0 0;font-size:15px}
+.time{font-weight:700}
+.sum{margin:14px 0 6px;background:var(--card);border-radius:16px;padding:14px 16px;border:3px solid var(--line)}
+.sum b{display:block;font-size:22px}
+h2{font-size:19px;margin:22px 4px 8px}
+.stop{background:var(--card);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.stop h3{margin:0;font-size:21px;line-height:1.3}
+.pill{display:inline-block;margin-top:4px;font-size:15px;font-weight:700;color:#fff;border-radius:999px;padding:2px 12px;background:var(--sub)}
+.pill.go{background:var(--go)}.pill.care{background:var(--care)}.pill.stop{background:var(--stop)}
+.cm{text-align:right;white-space:nowrap}
+.cm b{font-size:34px;line-height:1}
+.cm small{font-size:15px;font-weight:700}
+.cm i{display:block;font-style:normal;font-size:12px;color:var(--sub)}
+.stop p{grid-column:1/-1;margin:4px 0 0;font-size:16px}
+.stop .obs{font-size:13px;color:var(--sub)}
+.stop .alt{color:var(--stop);font-weight:700}
+.go-line{display:flex;align-items:center;gap:10px;padding:6px 0 6px 22px;font-size:15px;color:var(--sub)}
+.go-line::before{content:"";flex:none;width:4px;height:30px;border-radius:2px;background:var(--line)}
+.links{background:var(--card);border-radius:16px;padding:12px 16px;font-size:15px}
+.links a{color:inherit;display:block;padding:6px 0}
+.post{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.post .m{font-size:13px;color:var(--sub)}
+.post .m b{color:var(--ink);font-size:14px}
+.post p{margin:2px 0 0;font-size:16px}
+.btn{display:block;text-align:center;text-decoration:none;border-radius:12px;background:var(--navy);color:var(--bg);font-size:17px;font-weight:700;padding:12px;margin-top:8px}
+.note{font-size:13px;color:var(--sub);margin:10px 4px 0}
+.err{color:var(--stop)}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top">
+    <h1>雪の日ルート</h1>
+    <p>福井駅 → 永平寺 → 恐竜博物館</p>
+    <p class="time" id="time">気象庁のデータを読みこみ中…</p>
+  </div>
+  <div class="sum" id="sum"><b>読みこみ中…</b></div>
+
+  <h2>今日のルート</h2>
+  <div id="route"></div>
+
+  <h2>電車・バスの運行情報</h2>
+  <div class="links">
+    <a href="https://bus.keifuku.co.jp/">京福バス（永平寺ライナー・勝山のバス）</a>
+    <a href="https://www.echizen-tetudo.co.jp/">えちぜん鉄道（勝山永平寺線）</a>
+    <a href="https://www.jma.go.jp/bosai/snow/">気象庁「今後の雪」（6時間先までの雪）</a>
+  </div>
+
+  <h2>いま現地の声</h2>
+  <div id="feed"></div>
+  <a class="btn" id="postbtn" href="#">現地から投稿する</a>
+  <p class="note" id="feednote"></p>
+  <p class="note">雪と気温は気象庁アメダスの観測値です（10分ごとに更新）。永平寺・恐竜博物館は近くの観測所の値を使っています。時間は目安です。</p>
+</main>
+
+<script>
+{
+/* ===== 設定 =====
+   POST_FORM_URL: 投稿用のGoogleフォームのURL
+   COMMENTS_CSV_URL: フォームの回答シートを「ウェブに公開（CSV）」したURL
+   空のままだと、サンプルの投稿を表示します */
+const POST_FORM_URL='';
+const COMMENTS_CSV_URL='';
+
+const STOPS=[
+ {name:'福井駅',st:'57066',snowSt:'57066',snowName:'福井',kind:'in',next:'バス「永平寺ライナー」約30分',alt:''},
+ {name:'永平寺',st:'57082',snowSt:'57121',snowName:'大野',kind:'out',next:'バス → えちぜん鉄道（永平寺口〜勝山）→ バス 約60分',alt:'一乗谷朝倉氏遺跡博物館（屋内）'},
+ {name:'恐竜博物館',st:'57082',snowSt:'57121',snowName:'大野',kind:'in',next:'',alt:'セーレンプラネット（福井駅直結）'}
+];
+const SAMPLE=[['福井駅',15,'駅前の恐竜広場、今日は歩きやすいです。'],['永平寺',40,'朝はとても静かで空気がきれい。'],['恐竜博物館',70,'勝山駅からのバスは時間どおりでした。']];
+const JMA='https://www.jma.go.jp/bosai/amedas/data/';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const v=x=>Array.isArray(x)&&x[1]===0?x[0]:null;
+const word={go:'行ける',care:'注意',stop:'見合わせ'};
+
+function judge(snow,temp,pre,kind){
+ const falling=pre>0&&temp!==null&&temp<=1.5;
+ let st='go',msg='ふつうに回れます。';
+ if(snow>=50){st=kind==='out'?'stop':'care';msg=kind==='out'?'雪がとても多いです。今日は見合わせがおすすめ。':'館内は見学できますが、行き帰りに時間がかかります。'}
+ else if(snow>=10||falling){st='care';msg=kind==='out'?'雪景色がきれい。足もとがすべりやすいです。':'館内は暖かいです。外を歩くときは足もとに注意。'}
+ else if(pre>0){msg='雨が降っています。かさを持って行きましょう。'}
+ return {st,msg,falling};
+}
+
+async function load(){
+ const lt=(await (await fetch(JMA+'latest_time.txt',{cache:'no-store'})).text()).trim();
+ const key=lt.replace(/[-T:]/g,'').slice(0,12)+'00';
+ const map=await (await fetch(JMA+'map/'+key+'.json',{cache:'no-store'})).json();
+ const d=new Date(lt);
+ document.getElementById('time').textContent=d.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'})+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' の観測';
+ const res=STOPS.map(s=>{
+  const a=map[s.st]||{},b=map[s.snowSt]||{};
+  const snow=v(b.snow)??0,temp=v(a.temp),pre=v(a.precipitation1h)??0;
+  return {...s,snow,temp,pre,...judge(snow,temp,pre,s.kind)};
+ });
+ const worst=res.some(r=>r.st==='stop')?'stop':res.some(r=>r.st==='care')?'care':'go';
+ const sumText={go:['今日はふつうに行けます','雪の心配はありません。'],care:['今日は行けます（足もとに注意）','すべりにくい靴で出かけましょう。'],stop:['今日は山のほうは見合わせ','駅の近くの屋内の場所がおすすめです。']}[worst];
+ const sum=document.getElementById('sum');
+ sum.style.borderColor='var(--'+worst+')';
+ sum.innerHTML=`<b style="color:var(--${worst})">${sumText[0]}</b>${sumText[1]}`;
+ document.getElementById('route').innerHTML=res.map(r=>{
+  const card=`<div class="stop"><div><h3>${r.name}</h3><span class="pill ${r.st}">${word[r.st]}</span></div>
+   <div class="cm"><b>${r.snow}</b><small>cm</small><i>積雪（${r.snowName}）</i></div>
+   <p>${r.falling?'いま雪が降っています。':''}${r.msg}</p>
+   ${r.st==='stop'&&r.alt?`<p class="alt">かわりに：${r.alt}</p>`:''}
+   <p class="obs">気温 ${r.temp??'—'}℃・1時間の降水量 ${r.pre}mm</p></div>`;
+  return card+(r.next?`<div class="go-line">${r.next}</div>`:'');
+ }).join('');
+}
+
+function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'){r.push(f);rows.push(r);r=[];f=''}else if(c!='\r')f+=c}if(f||r.length){r.push(f);rows.push(r)}return rows}
+async function loadFeed(){
+ const fb=document.getElementById('postbtn');
+ if(POST_FORM_URL){fb.href=POST_FORM_URL}else{fb.removeAttribute('href');fb.style.opacity=.5}
+ let list=[];
+ if(COMMENTS_CSV_URL){
+  try{
+   const rows=parseCSV(await (await fetch(COMMENTS_CSV_URL,{cache:'no-store'})).text()).slice(1);
+   const now=Date.now();
+   list=rows.map(r=>({t:new Date(r[0].replace(/\//g,'-').replace(' ','T')),p:r[1],x:r[2]})).filter(o=>o.x&&now-o.t<3*3600000).sort((a,b)=>b.t-a.t).map(o=>[o.p,Math.round((now-o.t)/60000),o.x]);
+   document.getElementById('feednote').textContent='投稿は3時間で消えます。';
+  }catch(e){document.getElementById('feednote').textContent='投稿を読みこめませんでした。'}
+ }else{
+  list=SAMPLE;
+  document.getElementById('feednote').textContent='（いまはサンプルの投稿です。投稿フォームをつなぐと本物の投稿が出ます。）';
+ }
+ const ago=m=>m<1?'たった今':m<60?m+'分前':Math.floor(m/60)+'時間前';
+ document.getElementById('feed').innerHTML=list.length?list.map(p=>`<div class="post"><div class="m"><b>${esc(p[0])}</b>　${ago(p[1])}</div><p>${esc(p[2])}</p></div>`).join(''):'<p class="note">この3時間の投稿はまだありません。</p>';
+}
+
+load().catch(e=>{document.getElementById('time').textContent='気象庁のデータを読みこめませんでした';document.getElementById('sum').innerHTML='<b class="err">データを取得できません</b>時間をおいてもう一度開いてください。'});
+loadFeed();
+setInterval(()=>{load().catch(()=>{});loadFeed()},10*60000);
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+}
+</script>
+</body>
+</html>
