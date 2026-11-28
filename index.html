@@ -73,8 +73,6 @@ nav button.on{color:var(--fg);font-weight:700}
 nav svg{width:24px;height:24px}
 nav .plus span{width:44px;height:32px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--fg)}
 /* 投稿シート */
-function placeVal(){return pick.p==='ほかの場所'?($('otherPlace').value||'').trim():pick.p}
-function checkSend(){$('send').disabled=!(placeVal()&&pick.s)}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:9;align-items:flex-end;justify-content:center}
 .sheet.open{display:flex}
 .panel{background:var(--bg);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
@@ -359,6 +357,9 @@ document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v)
 
 /* 投稿シート */
 let pick={p:null,s:null};
+function placeVal(){return pick.p==='ほかの場所'?($('otherPlace').value||'').trim():pick.p}
+function checkSend(){$('send').disabled=!(placeVal()&&pick.s)}
+
 function chips(el,items,key){
  el.innerHTML=items.map(i=>`<button data-k="${i}">${i}</button>`).join('');
  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{pick[key]=b.dataset.k;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));if(key==='p')$('otherWrap').style.display=b.dataset.k==='ほかの場所'?'block':'none';checkSend()});
