@@ -7,8 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.30.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.30.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -74,6 +73,8 @@ nav button.on{color:var(--fg);font-weight:700}
 nav svg{width:24px;height:24px}
 nav .plus span{width:44px;height:32px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--fg)}
 /* 投稿シート */
+function placeVal(){return pick.p==='ほかの場所'?($('otherPlace').value||'').trim():pick.p}
+function checkSend(){$('send').disabled=!(placeVal()&&pick.s)}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:9;align-items:flex-end;justify-content:center}
 .sheet.open{display:flex}
 .panel{background:var(--bg);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
@@ -102,6 +103,16 @@ textarea{height:80px;resize:none}
 .mapboxgl-ctrl-geocoder{min-width:0;width:calc(100% - 70px);max-width:none;font-size:14px}
 .pop b{font-size:14px}.pop .v{margin-top:4px;padding:6px;background:#f3f3f3;border-radius:6px}
 .pop button{margin-top:6px;border:1px solid #1f4e79;color:#1f4e79;border-radius:6px;padding:4px 8px;background:#fff;font-size:12px}
+.mapwrap{position:relative}
+.msearch{position:absolute;top:10px;left:10px;right:56px;z-index:3}
+.msearch input,.fsearch input{width:100%;border:1px solid #ccc;border-radius:10px;padding:9px 12px;font-size:14px;background:#fff;color:#111;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.mres{background:#fff;border-radius:10px;margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.3);max-height:220px;overflow:auto}
+.mres button{display:block;width:100%;text-align:left;padding:8px 12px;border-bottom:1px solid #eee;color:#111;font-size:13px}
+.mres button small{color:#777;display:block;font-size:11px}
+.fsearch{padding:8px 16px;border-bottom:1px solid var(--line)}
+.fsearch input{box-shadow:none;border-color:var(--line);background:var(--bg);color:var(--fg)}
+.tag{cursor:pointer;text-decoration:underline dotted}
+#otherWrap{margin-top:8px;display:none}
 #map{height:380px;border-bottom:1px solid var(--line)}
 .mapnote{font-size:11px;color:var(--sub);padding:6px 16px;border-bottom:1px solid var(--line)}
 .pin{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;background:#888}
@@ -118,6 +129,7 @@ textarea{height:80px;resize:none}
 
 <section id="vfeed">
  <div class="stops" id="stops"></div>
+ <div class="fsearch"><input id="fq" type="search" placeholder="📍 場所で投稿をさがす（例：勝山）"></div>
  <div class="filter" id="filter"></div>
  <div id="feed"></div>
  <p class="note" id="feednote"></p>
@@ -126,7 +138,8 @@ textarea{height:80px;resize:none}
 <section id="vroute" hidden>
  <div class="maphead"><h2>地図で見る：今日はどこまで行ける？</h2>
  <p>ピンの色で今の状況がわかります。ピンを押すと、雪の量と現地の声が出ます。雪が多い日は、白いピン（屋内スポット）に切りかえられます。</p></div>
- <div id="map"></div>
+ <div class="mapwrap"><div class="msearch"><input id="mq" type="search" placeholder="場所をさがす（例：勝山駅、東尋坊）" enterkeyhint="search"><div class="mres" id="mres"></div></div>
+ <div id="map"></div></div>
  <div class="jump" id="jump"></div>
  <p class="mapnote">●緑：行ける　●オレンジ：注意　●赤：見合わせ　⌂白：雪の日でも楽しめる屋内スポット。線は道路にそった目安です（永平寺〜恐竜博物館は実際は電車＋バス）。近くまで拡大すると建物や川が見えます。</p>
  <p class="note" id="time">気象庁のデータを読みこみ中…</p>
@@ -149,6 +162,7 @@ textarea{height:80px;resize:none}
  <div class="top"><button id="close">キャンセル</button><b>いまの様子</b><span style="width:60px"></span></div>
  <div class="lbl">どこにいますか</div>
  <div class="chips" id="cPlace"></div>
+ <div id="otherWrap"><input id="otherPlace" maxlength="30" placeholder="場所の名前（例：勝山駅、一乗谷）"></div>
  <div class="lbl">どんな様子？</div>
  <div class="chips" id="cState"></div>
  <div class="lbl">ひとこと（なくてもOK）</div>
@@ -228,9 +242,6 @@ function initMap(){
  if(map||typeof mapboxgl==='undefined')return;
  mapboxgl.accessToken=MAPBOX_TOKEN;
  map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/standard',center:[136.37,36.07],zoom:10.3,pitch:55,bearing:-10,language:'ja'});
- if(typeof MapboxGeocoder!=='undefined'){
-  map.addControl(new MapboxGeocoder({accessToken:MAPBOX_TOKEN,mapboxgl,language:'ja',countries:'jp',proximity:{longitude:136.3,latitude:36.06},placeholder:'場所をさがす（例：勝山駅）',marker:true,zoom:15}),'top-left');
- }
  map.addControl(new mapboxgl.NavigationControl({showCompass:true}),'top-right');
  map.addControl(new mapboxgl.GeolocateControl({positionOptions:{enableHighAccuracy:true},trackUserLocation:false}),'top-right');
  map.on('style.load',async()=>{
@@ -314,6 +325,7 @@ function renderFeed(){
  if(!FORM_ACTION)list=list.concat(mine.map(o=>({...o,local:true})));
  // 気象庁の公式データも投稿として流す
  if(filterPlace)list=list.filter(o=>o.p===filterPlace);
+ const fq=($('fq').value||'').trim(); if(fq)list=list.filter(o=>!o.jma&&String(o.p||'').includes(fq));
  if(obsTime){
   const ws=filterPlace?weather.filter(w=>w.name===filterPlace):weather;
   const worst=ws.some(w=>w.st==='stop')?'stop':ws.some(w=>w.st==='care')?'care':'go';
@@ -327,7 +339,7 @@ function renderFeed(){
   const id=o.jma?'':(o.t+'|'+o.p);
   const liked=likes[id];
   return `<div class="post"><div class="av ${o.jma?'jma':''}">${o.jma?'気象':esc((o.n||'旅')[0])}</div><div class="body">
-   <div class="meta"><b>${o.jma?'気象庁アメダス':esc(o.n||'旅の人')}</b><span class="tag">📍${esc(o.p)}</span><span class="ago">${ago(Math.round((now-o.t)/60000))}</span></div>
+   <div class="meta"><b>${o.jma?'気象庁アメダス':esc(o.n||'旅の人')}</b><span class="tag" data-place="${esc(o.p)}">📍${esc(o.p)}</span><span class="ago">${ago(Math.round((now-o.t)/60000))}</span></div>
    ${o.jma?`<span class="state ${o.s}">${word[o.s]}</span>`:o.s?`<span class="state ${stateCls(o.s)}">${esc(o.s)}</span>`:''}
    ${o.x?`<p>${esc(o.x)}</p>`:''}
    ${o.jma?'':`<div class="acts"><button data-like="${esc(id)}" class="${liked?'on':''}">👍 役に立った${liked?' 1':''}</button>${o.sample?'<span>サンプル</span>':''}${o.local?'<span>この端末だけ</span>':''}</div>`}
@@ -349,16 +361,17 @@ document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v)
 let pick={p:null,s:null};
 function chips(el,items,key){
  el.innerHTML=items.map(i=>`<button data-k="${i}">${i}</button>`).join('');
- el.querySelectorAll('button').forEach(b=>b.onclick=()=>{pick[key]=b.dataset.k;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('send').disabled=!(pick.p&&pick.s)});
+ el.querySelectorAll('button').forEach(b=>b.onclick=()=>{pick[key]=b.dataset.k;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));if(key==='p')$('otherWrap').style.display=b.dataset.k==='ほかの場所'?'block':'none';checkSend()});
 }
-chips($('cPlace'),STOPS.map(s=>s.name),'p');
+chips($('cPlace'),STOPS.map(s=>s.name).concat(['ほかの場所']),'p');
 chips($('cState'),STATES.map(s=>s[0]),'s');
+$('otherPlace').oninput=checkSend;
 $('openPost').onclick=()=>{$('sheet').classList.add('open');$('nick').value=store.get('nick','')};
 $('close').onclick=()=>$('sheet').classList.remove('open');
 $('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').classList.remove('open')};
 function toast(t){const el=$('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2500)}
 $('send').onclick=async()=>{
- const post={t:Date.now(),p:pick.p,s:pick.s,x:$('txt').value.trim(),n:$('nick').value.trim()};
+ const post={t:Date.now(),p:placeVal(),s:pick.s,x:$('txt').value.trim(),n:$('nick').value.trim()};
  store.set('nick',post.n);
  if(FORM_ACTION){
   const fd=new URLSearchParams();
@@ -368,9 +381,38 @@ $('send').onclick=async()=>{
  }else{
   const m=store.get('mine',[]);m.push(post);store.set('mine',m);toast('投稿しました（いまはこの端末だけに表示）');
  }
- $('txt').value='';pick={p:null,s:null};document.querySelectorAll('.chips button').forEach(x=>x.classList.remove('on'));$('send').disabled=true;
+ $('txt').value='';$('otherPlace').value='';$('otherWrap').style.display='none';pick={p:null,s:null};document.querySelectorAll('.chips button').forEach(x=>x.classList.remove('on'));$('send').disabled=true;
  $('sheet').classList.remove('open');filterPlace=null;show('feed');renderStops();renderFeed();
 };
+
+/* 場所さがし（OpenStreetMap） */
+let searchMarker=null,stimer=null;
+async function osmSearch(q){
+ const u='https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=jp&accept-language=ja&limit=8&viewbox=135.4,36.4,136.9,35.3&q='+encodeURIComponent(q);
+ const r=await (await fetch(u)).json();
+ return r.map(f=>({name:f.name||f.display_name.split(',')[0],addr:f.display_name,c:[+f.lon,+f.lat],fukui:f.display_name.includes('福井県')})).sort((a,b)=>b.fukui-a.fukui);
+}
+function goPlace(item){
+ show('route');
+ setTimeout(()=>{initMap();if(!map)return;map.resize();
+  if(searchMarker)searchMarker.remove();
+  const el=document.createElement('div');el.className='mk';el.innerHTML=`<div class="pin" style="background:#1f4e79">●</div><div class="lb">${esc(item.name)}</div>`;
+  searchMarker=new mapboxgl.Marker({element:el,anchor:'left',offset:[-12,0]}).setLngLat(item.c).addTo(map);
+  flyTo(item.c,15.5);
+ },120);
+}
+$('mq').addEventListener('input',()=>{clearTimeout(stimer);const q=$('mq').value.trim();if(q.length<2){$('mres').innerHTML='';return}
+ stimer=setTimeout(async()=>{try{const list=await osmSearch(q);
+  $('mres').innerHTML=list.length?list.map((it,i)=>`<button data-i="${i}">${esc(it.name)}<small>${esc(it.addr)}</small></button>`).join(''):'<button disabled>見つかりませんでした</button>';
+  $('mres').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{$('mres').innerHTML='';$('mq').value=list[+b.dataset.i].name;goPlace(list[+b.dataset.i])});
+ }catch(e){$('mres').innerHTML='<button disabled>検索できませんでした</button>'}},500)});
+$('fq').addEventListener('input',()=>renderFeed());
+document.addEventListener('click',async e=>{
+ const t=e.target.closest('[data-place]');if(!t)return;
+ const name=t.dataset.place;
+ if(COORD[name])return goPlace({name,c:COORD[name]});
+ try{const r=await osmSearch(name);if(r[0])goPlace({name,c:r[0].c});else toast('地図で見つかりませんでした')}catch(err){}
+});
 
 renderStops();renderFeed();
 loadWeather().catch(()=>{$('time').textContent='気象庁のデータを読みこめませんでした。時間をおいてもう一度開いてください。'});
