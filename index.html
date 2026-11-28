@@ -324,7 +324,7 @@ function renderFeed(){
  // 気象庁の公式データも投稿として流す
  if(filterPlace)list=list.filter(o=>o.p===filterPlace);
  const fq=($('fq').value||'').trim(); if(fq)list=list.filter(o=>!o.jma&&String(o.p||'').includes(fq));
- if(obsTime){
+ if(obsTime&&!fq){
   const ws=filterPlace?weather.filter(w=>w.name===filterPlace):weather;
   const worst=ws.some(w=>w.st==='stop')?'stop':ws.some(w=>w.st==='care')?'care':'go';
   const x=filterPlace?`積雪 ${ws[0].snow}cm・気温 ${ws[0].temp??'—'}℃・1時間の降水量 ${ws[0].pre}mm\n${ws[0].falling?'いま雪が降っています。':''}${ws[0].msg}`
