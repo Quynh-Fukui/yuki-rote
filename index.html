@@ -2,98 +2,164 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>雪の日ルート</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1f4e79">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="雪の日ルート">
 <style>
-:root{color-scheme:light dark;--bg:#eef2f7;--card:#fff;--ink:#14213d;--sub:#5d6a82;--line:#dde4ee;--navy:#14213d;--go:#1d7f46;--care:#a86200;--stop:#c62828}
-@media(prefers-color-scheme:dark){:root{--bg:#0b111d;--card:#151d2e;--ink:#e8eef8;--sub:#9babc4;--line:#28334a;--navy:#cfdaf0;--go:#52c98f;--care:#f2b24c;--stop:#ff7070}}
-*{box-sizing:border-box;min-width:0}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:17px/1.6 "Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif}
-.app{max-width:440px;margin:0 auto;padding:18px 16px 32px}
-.top{background:var(--navy);color:var(--bg);border-radius:18px;padding:16px 18px}
-.top h1{margin:0;font-size:26px;line-height:1.2}
-.top p{margin:4px 0 0;font-size:15px}
-.time{font-weight:700}
-.sum{margin:14px 0 6px;background:var(--card);border-radius:16px;padding:14px 16px;border:3px solid var(--line)}
-.sum b{display:block;font-size:22px}
-h2{font-size:19px;margin:22px 4px 8px}
-.stop{background:var(--card);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
-.stop h3{margin:0;font-size:21px;line-height:1.3}
-.pill{display:inline-block;margin-top:4px;font-size:15px;font-weight:700;color:#fff;border-radius:999px;padding:2px 12px;background:var(--sub)}
-.pill.go{background:var(--go)}.pill.care{background:var(--care)}.pill.stop{background:var(--stop)}
-.cm{text-align:right;white-space:nowrap}
-.cm b{font-size:34px;line-height:1}
-.cm small{font-size:15px;font-weight:700}
-.cm i{display:block;font-style:normal;font-size:12px;color:var(--sub)}
-.stop p{grid-column:1/-1;margin:4px 0 0;font-size:16px}
-.stop .obs{font-size:13px;color:var(--sub)}
-.stop .alt{color:var(--stop);font-weight:700}
-.go-line{display:flex;align-items:center;gap:10px;padding:6px 0 6px 22px;font-size:15px;color:var(--sub)}
-.go-line::before{content:"";flex:none;width:4px;height:30px;border-radius:2px;background:var(--line)}
-.links{background:var(--card);border-radius:16px;padding:12px 16px;font-size:15px}
-.links a{color:inherit;display:block;padding:6px 0}
-.post{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px}
-.post .m{font-size:13px;color:var(--sub)}
-.post .m b{color:var(--ink);font-size:14px}
-.post p{margin:2px 0 0;font-size:16px}
-.btn{display:block;text-align:center;text-decoration:none;border-radius:12px;background:var(--navy);color:var(--bg);font-size:17px;font-weight:700;padding:12px;margin-top:8px}
-.note{font-size:13px;color:var(--sub);margin:10px 4px 0}
-.err{color:var(--stop)}
+:root{--bg:#fff;--fg:#111;--sub:#777;--line:#e6e6e6;--soft:#f4f4f4;--go:#1d7f46;--care:#a86200;--stop:#c62828}
+@media (prefers-color-scheme:dark){:root{--bg:#101010;--fg:#f2f2f2;--sub:#8a8a8a;--line:#262626;--soft:#1c1c1c;--go:#4cc27e;--care:#f0a63a;--stop:#ff6b6b}}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--fg);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px;line-height:1.5}
+body{max-width:520px;margin:0 auto;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+header{position:sticky;top:0;background:var(--bg);z-index:5;padding:calc(10px + env(safe-area-inset-top)) 16px 0;text-align:center}
+header h1{font-size:17px;font-weight:700}
+header .t{font-size:12px;color:var(--sub)}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-top:8px}
+.tabs button{flex:1;padding:10px 0;color:var(--sub);font-weight:600;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--fg);border-color:var(--fg)}
+/* 3地点の丸 */
+.stops{display:flex;justify-content:space-around;padding:14px 8px 12px;border-bottom:1px solid var(--line)}
+.st{display:flex;flex-direction:column;align-items:center;gap:4px;width:30%}
+.ring{width:64px;height:64px;border-radius:50%;border:3px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--soft)}
+.ring b{font-size:19px;line-height:1}.ring small{font-size:10px;color:var(--sub)}
+.st span{font-size:12px;font-weight:600}
+.st em{font-style:normal;font-size:11px;font-weight:700}
+.st.sel .ring{outline:2px solid var(--fg);outline-offset:3px}
+.go .ring{border-color:var(--go)}.go em{color:var(--go)}
+.care .ring{border-color:var(--care)}.care em{color:var(--care)}
+.stop .ring{border-color:var(--stop)}.stop em{color:var(--stop)}
+.filter{font-size:12px;color:var(--sub);padding:8px 16px;border-bottom:1px solid var(--line);display:none}
+.filter button{text-decoration:underline;color:var(--sub);font-size:12px}
+/* 投稿 */
+.post{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.av.jma{background:var(--fg);color:var(--bg);font-size:11px}
+.body{flex:1;min-width:0}
+.meta{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.meta b{font-size:14px}.meta .ago{color:var(--sub);font-size:13px;margin-left:auto}
+.tag{font-size:12px;color:var(--sub)}
+.state{display:inline-block;font-size:12px;font-weight:700;margin-top:3px}
+.state.go{color:var(--go)}.state.care{color:var(--care)}.state.stop{color:var(--stop)}
+.body p{margin-top:2px;white-space:pre-wrap;word-break:break-word}
+.acts{display:flex;gap:18px;margin-top:6px;color:var(--sub);font-size:13px}
+.acts button{color:var(--sub);display:flex;gap:4px;align-items:center}
+.acts button.on{color:var(--fg);font-weight:700}
+.note{font-size:12px;color:var(--sub);padding:12px 16px}
+/* ルート */
+.leg{padding:14px 16px;border-bottom:1px solid var(--line)}
+.leg h3{font-size:16px;display:flex;gap:8px;align-items:center}
+.leg .pill{font-size:12px;font-weight:700}
+.leg .pill.go{color:var(--go)}.leg .pill.care{color:var(--care)}.leg .pill.stop{color:var(--stop)}
+.leg p{font-size:14px;margin-top:4px}.leg .obs{font-size:12px;color:var(--sub)}
+.move{padding:8px 16px 8px 30px;font-size:13px;color:var(--sub);border-bottom:1px solid var(--line);position:relative}
+.move:before{content:"↓";position:absolute;left:14px}
+.links a{display:block;padding:12px 16px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none;font-size:14px}
+.links a:after{content:" ›";color:var(--sub)}
+/* 下のバー */
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav div{display:flex;width:100%;max-width:520px}
+nav button{flex:1;padding:10px 0 12px;font-size:11px;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button.on{color:var(--fg);font-weight:700}
+nav svg{width:24px;height:24px}
+nav .plus span{width:44px;height:32px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--fg)}
+/* 投稿シート */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:9;align-items:flex-end;justify-content:center}
+.sheet.open{display:flex}
+.panel{background:var(--bg);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+.panel .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.panel .top b{font-size:16px}
+.lbl{font-size:12px;color:var(--sub);margin:10px 0 6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:13px}
+.chips button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+textarea,input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;background:var(--bg);color:var(--fg)}
+textarea{height:80px;resize:none}
+.send{width:100%;margin-top:12px;background:var(--fg);color:var(--bg);border-radius:10px;padding:12px;font-weight:700}
+.send:disabled{opacity:.35}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:18px;font-size:13px;display:none;z-index:10}
 </style>
 </head>
 <body>
-<main class="app">
-  <div class="top">
-    <h1>雪の日ルート</h1>
-    <p>福井駅 → 永平寺 → 恐竜博物館</p>
-    <p class="time" id="time">気象庁のデータを読みこみ中…</p>
-  </div>
-  <div class="sum" id="sum"><b>読みこみ中…</b></div>
+<header>
+ <h1>雪の日ルート</h1>
+ <div class="t">福井駅 → 永平寺 → 恐竜博物館</div>
+ <div class="tabs"><button class="on" data-v="feed">いまの声</button><button data-v="route">ルート</button></div>
+</header>
 
-  <h2>今日のルート</h2>
-  <div id="route"></div>
+<section id="vfeed">
+ <div class="stops" id="stops"></div>
+ <div class="filter" id="filter"></div>
+ <div id="feed"></div>
+ <p class="note" id="feednote"></p>
+</section>
 
-  <h2>電車・バスの運行情報</h2>
-  <div class="links">
-    <a href="https://bus.keifuku.co.jp/">京福バス（永平寺ライナー・勝山のバス）</a>
-    <a href="https://www.echizen-tetudo.co.jp/">えちぜん鉄道（勝山永平寺線）</a>
-    <a href="https://www.jma.go.jp/bosai/snow/">気象庁「今後の雪」（6時間先までの雪）</a>
-  </div>
+<section id="vroute" hidden>
+ <p class="note" id="time">気象庁のデータを読みこみ中…</p>
+ <div id="route"></div>
+ <div class="links">
+  <a href="https://bus.keifuku.co.jp/" target="_blank" rel="noopener">京福バスの運行情報</a>
+  <a href="https://www.echizen-tetudo.co.jp/" target="_blank" rel="noopener">えちぜん鉄道の運行情報</a>
+  <a href="https://www.jma.go.jp/bosai/snow/" target="_blank" rel="noopener">気象庁「今後の雪」（6時間先まで）</a>
+ </div>
+ <p class="note">雪と気温は気象庁アメダスの観測値です。気象庁は10分ごとに発表し、10〜20分ほど遅れて出ます。永平寺・恐竜博物館は近くの観測所（気温：勝山、積雪：大野）の値です。</p>
+</section>
 
-  <h2>いま現地の声</h2>
-  <div id="feed"></div>
-  <a class="btn" id="postbtn" href="#">現地から投稿する</a>
-  <p class="note" id="feednote"></p>
-  <p class="note">雪と気温は気象庁アメダスの観測値です（10分ごとに更新）。永平寺・恐竜博物館は近くの観測所の値を使っています。時間は目安です。</p>
-</main>
+<nav><div>
+ <button class="on" data-v="feed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>いまの声</button>
+ <button class="plus" id="openPost"><span>＋</span>投稿</button>
+ <button data-v="route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4"/></svg>ルート</button>
+</div></nav>
+
+<div class="sheet" id="sheet"><div class="panel">
+ <div class="top"><button id="close">キャンセル</button><b>いまの様子</b><span style="width:60px"></span></div>
+ <div class="lbl">どこにいますか</div>
+ <div class="chips" id="cPlace"></div>
+ <div class="lbl">どんな様子？</div>
+ <div class="chips" id="cState"></div>
+ <div class="lbl">ひとこと（なくてもOK）</div>
+ <textarea id="txt" maxlength="140" placeholder="例：駅前は雪が積もってきれい！バスは時間どおり"></textarea>
+ <div class="lbl">ニックネーム（なくてもOK）</div>
+ <input id="nick" maxlength="20" placeholder="例：たびびと">
+ <button class="send" id="send" disabled>投稿する</button>
+</div></div>
+<div class="toast" id="toast"></div>
 
 <script>
 {
-/* ===== 設定 =====
-   POST_FORM_URL: 投稿用のGoogleフォームのURL
-   COMMENTS_CSV_URL: フォームの回答シートを「ウェブに公開（CSV）」したURL
-   空のままだと、サンプルの投稿を表示します */
-const POST_FORM_URL='';
-const COMMENTS_CSV_URL='';
+/* ===== 設定（Googleフォームをつないだら入れる） =====
+ FORM_ACTION: フォームの .../formResponse のURL
+ ENTRY: 各質問の entry 番号（場所・様子・ひとこと・ニックネーム）
+ FEED_CSV: 回答シートを「ウェブに公開（CSV）」したURL
+ 空のままだと、サンプルの投稿と、この端末で投稿したものだけ出ます */
+const FORM_ACTION='';
+const ENTRY={place:'',state:'',text:'',nick:''};
+const FEED_CSV='';
 
 const STOPS=[
- {name:'福井駅',st:'57066',snowSt:'57066',snowName:'福井',kind:'in',next:'バス「永平寺ライナー」約30分',alt:''},
- {name:'永平寺',st:'57082',snowSt:'57121',snowName:'大野',kind:'out',next:'バス → えちぜん鉄道（永平寺口〜勝山）→ バス 約60分',alt:'一乗谷朝倉氏遺跡博物館（屋内）'},
- {name:'恐竜博物館',st:'57082',snowSt:'57121',snowName:'大野',kind:'in',next:'',alt:'セーレンプラネット（福井駅直結）'}
-];
-const SAMPLE=[['福井駅',15,'駅前の恐竜広場、今日は歩きやすいです。'],['永平寺',40,'朝はとても静かで空気がきれい。'],['恐竜博物館',70,'勝山駅からのバスは時間どおりでした。']];
+ {name:'福井駅',st:'57066',snowSt:'57066',kind:'in',next:'バス「永平寺ライナー」約30分',alt:''},
+ {name:'永平寺',st:'57082',snowSt:'57121',kind:'out',next:'バス → えちぜん鉄道（永平寺口〜勝山）→ バス 約60分',alt:'一乗谷朝倉氏遺跡博物館（屋内）'},
+ {name:'恐竜博物館',st:'57082',snowSt:'57121',kind:'in',next:'',alt:'セーレンプラネット（福井駅直結）'}];
+const STATES=[['ふつう','go'],['雪がきれい','go'],['足もとすべる','care'],['バスが遅れ','care'],['雪が多い','stop']];
+const SAMPLE=[
+ {p:'福井駅',s:'ふつう',x:'駅前の恐竜広場、今日は歩きやすいです。',n:'たびびと',m:15},
+ {p:'永平寺',s:'雪がきれい',x:'朝はとても静かで空気がきれい。',n:'ゆき',m:40},
+ {p:'恐竜博物館',s:'ふつう',x:'勝山駅からのバスは時間どおりでした。',n:'',m:70}];
 const JMA='https://www.jma.go.jp/bosai/amedas/data/';
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const v=x=>Array.isArray(x)&&x[1]===0?x[0]:null;
 const word={go:'行ける',care:'注意',stop:'見合わせ'};
+const stateCls=s=>(STATES.find(a=>a[0]===s)||[])[1]||'';
+const ago=m=>m<1?'たった今':m<60?m+'分前':Math.floor(m/60)+'時間前';
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let weather=[],obsTime=null,filterPlace=null;
 
 function judge(snow,temp,pre,kind){
  const falling=pre>0&&temp!==null&&temp<=1.5;
@@ -104,56 +170,116 @@ function judge(snow,temp,pre,kind){
  return {st,msg,falling};
 }
 
-async function load(){
+async function loadWeather(){
  const lt=(await (await fetch(JMA+'latest_time.txt',{cache:'no-store'})).text()).trim();
- const key=lt.replace(/[-T:]/g,'').slice(0,12)+'00';
- const map=await (await fetch(JMA+'map/'+key+'.json',{cache:'no-store'})).json();
- const d=new Date(lt);
- document.getElementById('time').textContent=d.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'})+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+' の観測';
- const res=STOPS.map(s=>{
-  const a=map[s.st]||{},b=map[s.snowSt]||{};
-  const snow=v(b.snow)??0,temp=v(a.temp),pre=v(a.precipitation1h)??0;
-  return {...s,snow,temp,pre,...judge(snow,temp,pre,s.kind)};
- });
- const worst=res.some(r=>r.st==='stop')?'stop':res.some(r=>r.st==='care')?'care':'go';
- const sumText={go:['今日はふつうに行けます','雪の心配はありません。'],care:['今日は行けます（足もとに注意）','すべりにくい靴で出かけましょう。'],stop:['今日は山のほうは見合わせ','駅の近くの屋内の場所がおすすめです。']}[worst];
- const sum=document.getElementById('sum');
- sum.style.borderColor='var(--'+worst+')';
- sum.innerHTML=`<b style="color:var(--${worst})">${sumText[0]}</b>${sumText[1]}`;
- document.getElementById('route').innerHTML=res.map(r=>{
-  const card=`<div class="stop"><div><h3>${r.name}</h3><span class="pill ${r.st}">${word[r.st]}</span></div>
-   <div class="cm"><b>${r.snow}</b><small>cm</small><i>積雪（${r.snowName}）</i></div>
-   <p>${r.falling?'いま雪が降っています。':''}${r.msg}</p>
-   ${r.st==='stop'&&r.alt?`<p class="alt">かわりに：${r.alt}</p>`:''}
-   <p class="obs">気温 ${r.temp??'—'}℃・1時間の降水量 ${r.pre}mm</p></div>`;
-  return card+(r.next?`<div class="go-line">${r.next}</div>`:'');
- }).join('');
+ const map=await (await fetch(JMA+'map/'+lt.replace(/[-T:]/g,'').slice(0,12)+'00.json',{cache:'no-store'})).json();
+ obsTime=new Date(lt);
+ weather=STOPS.map(s=>{const a=map[s.st]||{},b=map[s.snowSt]||{};const snow=v(b.snow)??0,temp=v(a.temp),pre=v(a.precipitation1h)??0;return {...s,snow,temp,pre,...judge(snow,temp,pre,s.kind)}});
+ const hm=d=>d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+ $('time').textContent=obsTime.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'})+' '+hm(obsTime)+' の観測（確認 '+hm(new Date())+'）';
+ renderStops();renderRoute();renderFeed();
 }
 
+function renderStops(){
+ $('stops').innerHTML=(weather.length?weather:STOPS).map(w=>`<button class="st ${w.st||''} ${filterPlace===w.name?'sel':''}" data-p="${w.name}">
+  <div class="ring"><b>${w.snow??'…'}</b><small>cm</small></div><span>${w.name}</span><em>${w.st?word[w.st]:''}</em></button>`).join('');
+ $('stops').querySelectorAll('.st').forEach(b=>b.onclick=()=>{filterPlace=filterPlace===b.dataset.p?null:b.dataset.p;renderStops();renderFeed()});
+ const f=$('filter');
+ if(filterPlace){f.style.display='block';f.innerHTML=`${esc(filterPlace)}の投稿だけ表示中　<button>すべて見る</button>`;f.querySelector('button').onclick=()=>{filterPlace=null;renderStops();renderFeed()}}else f.style.display='none';
+}
+
+function renderRoute(){
+ $('route').innerHTML=weather.map(r=>`<div class="leg"><h3>${r.name}<span class="pill ${r.st}">${word[r.st]}</span></h3>
+  <p>積雪 ${r.snow}cm　${r.falling?'いま雪が降っています。':''}${r.msg}</p>
+  ${r.st==='stop'&&r.alt?`<p>かわりに：${r.alt}</p>`:''}
+  <p class="obs">気温 ${r.temp??'—'}℃・1時間の降水量 ${r.pre}mm</p></div>${r.next?`<div class="move">${r.next}</div>`:''}`).join('');
+}
+
+/* 投稿の読みこみ */
 function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}else if(c=='"')q=true;else if(c==','){r.push(f);f=''}else if(c=='\n'){r.push(f);rows.push(r);r=[];f=''}else if(c!='\r')f+=c}if(f||r.length){r.push(f);rows.push(r)}return rows}
-async function loadFeed(){
- const fb=document.getElementById('postbtn');
- if(POST_FORM_URL){fb.href=POST_FORM_URL}else{fb.removeAttribute('href');fb.style.opacity=.5}
- let list=[];
- if(COMMENTS_CSV_URL){
-  try{
-   const rows=parseCSV(await (await fetch(COMMENTS_CSV_URL,{cache:'no-store'})).text()).slice(1);
-   const now=Date.now();
-   list=rows.map(r=>({t:new Date(r[0].replace(/\//g,'-').replace(' ','T')),p:r[1],x:r[2]})).filter(o=>o.x&&now-o.t<3*3600000).sort((a,b)=>b.t-a.t).map(o=>[o.p,Math.round((now-o.t)/60000),o.x]);
-   document.getElementById('feednote').textContent='投稿は3時間で消えます。';
-  }catch(e){document.getElementById('feednote').textContent='投稿を読みこめませんでした。'}
- }else{
-  list=SAMPLE;
-  document.getElementById('feednote').textContent='（いまはサンプルの投稿です。投稿フォームをつなぐと本物の投稿が出ます。）';
- }
- const ago=m=>m<1?'たった今':m<60?m+'分前':Math.floor(m/60)+'時間前';
- document.getElementById('feed').innerHTML=list.length?list.map(p=>`<div class="post"><div class="m"><b>${esc(p[0])}</b>　${ago(p[1])}</div><p>${esc(p[2])}</p></div>`).join(''):'<p class="note">この3時間の投稿はまだありません。</p>';
+let remote=null,remoteErr=false;
+async function loadPosts(){
+ if(!FEED_CSV)return;
+ try{
+  const rows=parseCSV(await (await fetch(FEED_CSV,{cache:'no-store'})).text()).slice(1);
+  remote=rows.map(r=>({t:new Date(r[0].replace(/\//g,'-').replace(' ','T')).getTime(),p:r[1],s:r[2],x:r[3],n:r[4]})).filter(o=>o.p);
+  remoteErr=false;
+ }catch(e){remoteErr=true}
+ renderFeed();
 }
 
-load().catch(e=>{document.getElementById('time').textContent='気象庁のデータを読みこめませんでした';document.getElementById('sum').innerHTML='<b class="err">データを取得できません</b>時間をおいてもう一度開いてください。'});
-loadFeed();
-setInterval(()=>{load().catch(()=>{});loadFeed()},10*60000);
-if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+function renderFeed(){
+ const now=Date.now(),H3=3*3600000;
+ let list=[];
+ const mine=store.get('mine',[]).filter(o=>now-o.t<H3);
+ if(remote){list=remote.filter(o=>now-o.t<H3)}
+ else{list=SAMPLE.map(o=>({...o,t:now-o.m*60000,sample:true}))}
+ if(!FORM_ACTION)list=list.concat(mine.map(o=>({...o,local:true})));
+ // 気象庁の公式データも投稿として流す
+ if(filterPlace)list=list.filter(o=>o.p===filterPlace);
+ if(obsTime){
+  const ws=filterPlace?weather.filter(w=>w.name===filterPlace):weather;
+  const worst=ws.some(w=>w.st==='stop')?'stop':ws.some(w=>w.st==='care')?'care':'go';
+  const x=filterPlace?`積雪 ${ws[0].snow}cm・気温 ${ws[0].temp??'—'}℃・1時間の降水量 ${ws[0].pre}mm\n${ws[0].falling?'いま雪が降っています。':''}${ws[0].msg}`
+   :ws.map(w=>`${w.name}　積雪 ${w.snow}cm・${w.temp??'—'}℃${w.falling?'・雪が降っています':''}`).join('\n');
+  list.push({jma:true,t:obsTime.getTime(),p:filterPlace||'ルート全体',s:worst,x});
+ }
+ list.sort((a,b)=>b.t-a.t);
+ const likes=store.get('likes',{});
+ $('feed').innerHTML=list.map(o=>{
+  const id=o.jma?'':(o.t+'|'+o.p);
+  const liked=likes[id];
+  return `<div class="post"><div class="av ${o.jma?'jma':''}">${o.jma?'気象':esc((o.n||'旅')[0])}</div><div class="body">
+   <div class="meta"><b>${o.jma?'気象庁アメダス':esc(o.n||'旅の人')}</b><span class="tag">📍${esc(o.p)}</span><span class="ago">${ago(Math.round((now-o.t)/60000))}</span></div>
+   ${o.jma?`<span class="state ${o.s}">${word[o.s]}</span>`:o.s?`<span class="state ${stateCls(o.s)}">${esc(o.s)}</span>`:''}
+   ${o.x?`<p>${esc(o.x)}</p>`:''}
+   ${o.jma?'':`<div class="acts"><button data-like="${esc(id)}" class="${liked?'on':''}">👍 役に立った${liked?' 1':''}</button>${o.sample?'<span>サンプル</span>':''}${o.local?'<span>この端末だけ</span>':''}</div>`}
+  </div></div>`}).join('')||'<p class="note">この3時間の投稿はまだありません。</p>';
+ $('feed').querySelectorAll('[data-like]').forEach(b=>b.onclick=()=>{const l=store.get('likes',{});l[b.dataset.like]=!l[b.dataset.like];store.set('likes',l);renderFeed()});
+ $('feednote').textContent=remoteErr?'投稿を読みこめませんでした。':remote?'投稿は3時間で消えます。':'いまはサンプルの投稿です。投稿フォームをつなぐと、みんなの投稿が出ます。';
+}
+
+/* 画面の切りかえ */
+function show(vname){
+ $('vfeed').hidden=vname!=='feed';$('vroute').hidden=vname!=='route';
+ document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===vname));
+ window.scrollTo(0,0);
+}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* 投稿シート */
+let pick={p:null,s:null};
+function chips(el,items,key){
+ el.innerHTML=items.map(i=>`<button data-k="${i}">${i}</button>`).join('');
+ el.querySelectorAll('button').forEach(b=>b.onclick=()=>{pick[key]=b.dataset.k;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('send').disabled=!(pick.p&&pick.s)});
+}
+chips($('cPlace'),STOPS.map(s=>s.name),'p');
+chips($('cState'),STATES.map(s=>s[0]),'s');
+$('openPost').onclick=()=>{$('sheet').classList.add('open');$('nick').value=store.get('nick','')};
+$('close').onclick=()=>$('sheet').classList.remove('open');
+$('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').classList.remove('open')};
+function toast(t){const el=$('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2500)}
+$('send').onclick=async()=>{
+ const post={t:Date.now(),p:pick.p,s:pick.s,x:$('txt').value.trim(),n:$('nick').value.trim()};
+ store.set('nick',post.n);
+ if(FORM_ACTION){
+  const fd=new URLSearchParams();
+  fd.append('entry.'+ENTRY.place,post.p);fd.append('entry.'+ENTRY.state,post.s);
+  if(post.x)fd.append('entry.'+ENTRY.text,post.x);if(post.n)fd.append('entry.'+ENTRY.nick,post.n);
+  try{await fetch(FORM_ACTION,{method:'POST',mode:'no-cors',body:fd});toast('投稿しました。数分で表示されます')}catch(e){toast('送信できませんでした')}
+ }else{
+  const m=store.get('mine',[]);m.push(post);store.set('mine',m);toast('投稿しました（いまはこの端末だけに表示）');
+ }
+ $('txt').value='';pick={p:null,s:null};document.querySelectorAll('.chips button').forEach(x=>x.classList.remove('on'));$('send').disabled=true;
+ $('sheet').classList.remove('open');filterPlace=null;show('feed');renderStops();renderFeed();
+};
+
+renderStops();renderFeed();
+loadWeather().catch(()=>{$('time').textContent='気象庁のデータを読みこめませんでした。時間をおいてもう一度開いてください。'});
+loadPosts();
+setInterval(()=>{loadWeather().catch(()=>{});loadPosts()},2*60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadWeather().catch(()=>{});loadPosts()}});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>
 </body>
