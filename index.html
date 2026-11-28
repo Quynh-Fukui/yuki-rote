@@ -7,6 +7,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -86,7 +88,16 @@ textarea{height:80px;resize:none}
 .send{width:100%;margin-top:12px;background:var(--fg);color:var(--bg);border-radius:10px;padding:12px;font-weight:700}
 .send:disabled{opacity:.35}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:18px;font-size:13px;display:none;z-index:10}
-#map{height:340px;border-bottom:1px solid var(--line)}
+.maphead{padding:12px 16px 8px}
+.maphead h2{font-size:16px}
+.maphead p{font-size:12px;color:var(--sub);margin-top:2px}
+.jump{display:flex;gap:6px;padding:8px 16px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.jump button{flex:none;border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:13px}
+.pin.alt{background:#fff;color:#333;border-color:#555;font-size:14px}
+.mapboxgl-ctrl-geocoder{min-width:0;width:calc(100% - 70px);max-width:none;font-size:14px}
+.pop b{font-size:14px}.pop .v{margin-top:4px;padding:6px;background:#f3f3f3;border-radius:6px}
+.pop button{margin-top:6px;border:1px solid #1f4e79;color:#1f4e79;border-radius:6px;padding:4px 8px;background:#fff;font-size:12px}
+#map{height:380px;border-bottom:1px solid var(--line)}
 .mapnote{font-size:11px;color:var(--sub);padding:6px 16px;border-bottom:1px solid var(--line)}
 .pin{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;background:#888}
 .pin.go{background:#1d7f46}.pin.care{background:#a86200}.pin.stop{background:#c62828}
@@ -108,8 +119,11 @@ textarea{height:80px;resize:none}
 </section>
 
 <section id="vroute" hidden>
+ <div class="maphead"><h2>地図で見る：今日はどこまで行ける？</h2>
+ <p>ピンの色で今の状況がわかります。ピンを押すと、雪の量と現地の声が出ます。雪が多い日は、白いピン（屋内スポット）に切りかえられます。</p></div>
  <div id="map"></div>
- <p class="mapnote">ピンの色＝いまの状況（緑：行ける／オレンジ：注意／赤：見合わせ）。線は道路にそった目安です。</p>
+ <div class="jump" id="jump"></div>
+ <p class="mapnote">●緑：行ける　●オレンジ：注意　●赤：見合わせ　⌂白：雪の日でも楽しめる屋内スポット。線は道路にそった目安です（永平寺〜恐竜博物館は実際は電車＋バス）。近くまで拡大すると建物や川が見えます。</p>
  <p class="note" id="time">気象庁のデータを読みこみ中…</p>
  <div id="route"></div>
  <div class="links">
@@ -201,12 +215,19 @@ function renderStops(){
 /* ===== 3D地図（Mapbox） ===== */
 const MAPBOX_TOKEN='pk.eyJ1IjoicXV5bmhoaXAiLCJhIjoiY210eng1MjZiMGpjejJ4cjB1OXpscm11NiJ9.YRLWU1Hx2-H1tKJKbADfzA';
 const COORD={'福井駅':[136.2236,36.0621],'永平寺':[136.3553,36.0563],'恐竜博物館':[136.5076,36.0843]};
-let map=null,markers=[];
+let map=null,markers=[],altMarkers=[];
+const ALTS=[{name:'一乗谷朝倉氏遺跡博物館',addr:'福井県福井市安波賀中島町8-10',note:'戦国時代の町と館を屋内で体験'},{name:'セーレンプラネット',addr:'福井県福井市手寄1-4-1',note:'福井駅前のプラネタリウム（ハピリン内）'}];
+function flyTo(c,z){if(map)map.flyTo({center:c,zoom:z||16.3,pitch:65,bearing:-20,duration:2500})}
+function fitAll(){if(!map)return;const b=new mapboxgl.LngLatBounds();Object.values(COORD).forEach(c=>b.extend(c));map.fitBounds(b,{padding:60,pitch:55,duration:1500})}
 function initMap(){
  if(map||typeof mapboxgl==='undefined')return;
  mapboxgl.accessToken=MAPBOX_TOKEN;
- map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/standard',center:[136.37,36.07],zoom:10.3,pitch:55,bearing:-10});
+ map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/standard',center:[136.37,36.07],zoom:10.3,pitch:55,bearing:-10,language:'ja'});
+ if(typeof MapboxGeocoder!=='undefined'){
+  map.addControl(new MapboxGeocoder({accessToken:MAPBOX_TOKEN,mapboxgl,language:'ja',countries:'jp',proximity:{longitude:136.3,latitude:36.06},placeholder:'場所をさがす（例：勝山駅）',marker:true,zoom:15}),'top-left');
+ }
  map.addControl(new mapboxgl.NavigationControl({showCompass:true}),'top-right');
+ map.addControl(new mapboxgl.GeolocateControl({positionOptions:{enableHighAccuracy:true},trackUserLocation:false}),'top-right');
  map.on('style.load',async()=>{
   map.addSource('dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512});
   map.setTerrain({source:'dem',exaggeration:1.5});
@@ -220,17 +241,42 @@ function initMap(){
   map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:line}}});
   map.addLayer({id:'route-line',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#1f4e79','line-width':5,'line-opacity':.85}});
   map.addLayer({id:'route-arrows',type:'symbol',source:'route',layout:{'symbol-placement':'line','symbol-spacing':80,'text-field':'▶','text-size':14,'text-rotation-alignment':'map','text-keep-upright':false,'text-allow-overlap':true},paint:{'text-color':'#1f4e79'}});
-  const b=new mapboxgl.LngLatBounds();line.forEach(c=>b.extend(c));map.fitBounds(b,{padding:50,pitch:55,duration:0});
+  fitAll();
   drawPins();
+  for(const a of ALTS){
+   try{
+    const g=await (await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+encodeURIComponent(a.addr)+'.json?country=jp&language=ja&limit=1&access_token='+MAPBOX_TOKEN)).json();
+    if(g.features&&g.features[0]){a.c=g.features[0].center;
+     const el=document.createElement('div');el.className='pin alt';el.textContent='⌂';
+     altMarkers.push(new mapboxgl.Marker({element:el}).setLngLat(a.c).setPopup(new mapboxgl.Popup({offset:18}).setHTML(`<div class="pop"><b>${a.name}</b><br>雪の日でも楽しめる屋内スポット<br>${a.note}</div>`)).addTo(map));}
+   }catch(e){}
+  }
+ });
+ const j=$('jump');
+ j.innerHTML=STOPS.map((s,i)=>`<button data-i="${i}">${i+1} ${s.name}</button>`).join('')+'<button data-all>ルート全体</button><button data-alt>⌂ 屋内スポット</button>';
+ j.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  if(b.dataset.all!==undefined)return fitAll();
+  if(b.dataset.alt!==undefined){const c=ALTS.filter(a=>a.c).map(a=>a.c);if(c.length){const bb=new mapboxgl.LngLatBounds();c.concat([COORD['福井駅']]).forEach(x=>bb.extend(x));map.fitBounds(bb,{padding:70,pitch:50,duration:1500})}return}
+  const s=STOPS[+b.dataset.i];flyTo(COORD[s.name]);const m=markers[+b.dataset.i];if(m&&!m.getPopup().isOpen())m.togglePopup();
  });
 }
+function latestPost(place){
+ const now=Date.now();
+ let list=remote?remote.filter(o=>o.p===place&&now-o.t<3*3600000):SAMPLE.filter(o=>o.p===place).map(o=>({...o,t:now-o.m*60000}));
+ list=list.concat(store.get('mine',[]).filter(o=>o.p===place&&now-o.t<3*3600000));
+ list.sort((a,b)=>b.t-a.t);return list[0];
+}
+window.__fly=(i)=>{const s=STOPS[i];flyTo(COORD[s.name])};
 function drawPins(){
  if(!map)return;
  markers.forEach(m=>m.remove());markers=[];
  (weather.length?weather:STOPS).forEach((w,i)=>{
   const el=document.createElement('div');el.className='pin '+(w.st||'');el.textContent=i+1;
-  const html=`<b>${w.name}</b><br>${w.st?word[w.st]+'・':''}積雪 ${w.snow??'—'}cm・気温 ${w.temp??'—'}℃`;
-  markers.push(new mapboxgl.Marker({element:el}).setLngLat(COORD[w.name]).setPopup(new mapboxgl.Popup({offset:18}).setHTML(html)).addTo(map));
+  const lp=latestPost(w.name);
+  const html=`<div class="pop"><b>${w.name}</b>　${w.st?word[w.st]:''}<br>積雪 ${w.snow??'—'}cm・気温 ${w.temp??'—'}℃
+   ${lp?`<div class="v">${esc(lp.s||'')}　${esc(lp.x||'')}<br><small>${ago(Math.round((Date.now()-lp.t)/60000))}${lp.m!==undefined&&!remote?'（サンプル）':''}</small></div>`:'<div class="v">この3時間の投稿はまだありません</div>'}
+   <button onclick="__fly(${i})">近くを3Dで見る</button></div>`;
+  markers.push(new mapboxgl.Marker({element:el}).setLngLat(COORD[w.name]).setPopup(new mapboxgl.Popup({offset:18,maxWidth:'240px'}).setHTML(html)).addTo(map));
  });
 }
 function renderRoute(){
