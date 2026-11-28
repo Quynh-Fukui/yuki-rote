@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>雪の日ルート</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -84,6 +86,11 @@ textarea{height:80px;resize:none}
 .send{width:100%;margin-top:12px;background:var(--fg);color:var(--bg);border-radius:10px;padding:12px;font-weight:700}
 .send:disabled{opacity:.35}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:18px;font-size:13px;display:none;z-index:10}
+#map{height:340px;border-bottom:1px solid var(--line)}
+.mapnote{font-size:11px;color:var(--sub);padding:6px 16px;border-bottom:1px solid var(--line)}
+.pin{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;background:#888}
+.pin.go{background:#1d7f46}.pin.care{background:#a86200}.pin.stop{background:#c62828}
+.mapboxgl-popup-content{color:#111;font-size:13px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -101,6 +108,8 @@ textarea{height:80px;resize:none}
 </section>
 
 <section id="vroute" hidden>
+ <div id="map"></div>
+ <p class="mapnote">ピンの色＝いまの状況（緑：行ける／オレンジ：注意／赤：見合わせ）。線は道路にそった目安です。</p>
  <p class="note" id="time">気象庁のデータを読みこみ中…</p>
  <div id="route"></div>
  <div class="links">
@@ -188,7 +197,44 @@ function renderStops(){
  if(filterPlace){f.style.display='block';f.innerHTML=`${esc(filterPlace)}の投稿だけ表示中　<button>すべて見る</button>`;f.querySelector('button').onclick=()=>{filterPlace=null;renderStops();renderFeed()}}else f.style.display='none';
 }
 
+
+/* ===== 3D地図（Mapbox） ===== */
+const MAPBOX_TOKEN='pk.eyJ1IjoicXV5bmhoaXAiLCJhIjoiY210eng1MjZiMGpjejJ4cjB1OXpscm11NiJ9.YRLWU1Hx2-H1tKJKbADfzA';
+const COORD={'福井駅':[136.2236,36.0621],'永平寺':[136.3553,36.0563],'恐竜博物館':[136.5076,36.0843]};
+let map=null,markers=[];
+function initMap(){
+ if(map||typeof mapboxgl==='undefined')return;
+ mapboxgl.accessToken=MAPBOX_TOKEN;
+ map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/standard',center:[136.37,36.07],zoom:10.3,pitch:55,bearing:-10});
+ map.addControl(new mapboxgl.NavigationControl({showCompass:true}),'top-right');
+ map.on('style.load',async()=>{
+  map.addSource('dem',{type:'raster-dem',url:'mapbox://mapbox.mapbox-terrain-dem-v1',tileSize:512});
+  map.setTerrain({source:'dem',exaggeration:1.5});
+  const pts=STOPS.map(s=>COORD[s.name]);
+  let line=pts;
+  try{
+   const u='https://api.mapbox.com/directions/v5/mapbox/driving/'+pts.map(p=>p.join(',')).join(';')+'?geometries=geojson&overview=full&access_token='+MAPBOX_TOKEN;
+   const r=await (await fetch(u)).json();
+   if(r.routes&&r.routes[0])line=r.routes[0].geometry.coordinates;
+  }catch(e){}
+  map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:line}}});
+  map.addLayer({id:'route-line',type:'line',source:'route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#1f4e79','line-width':5,'line-opacity':.85}});
+  map.addLayer({id:'route-arrows',type:'symbol',source:'route',layout:{'symbol-placement':'line','symbol-spacing':80,'text-field':'▶','text-size':14,'text-rotation-alignment':'map','text-keep-upright':false,'text-allow-overlap':true},paint:{'text-color':'#1f4e79'}});
+  const b=new mapboxgl.LngLatBounds();line.forEach(c=>b.extend(c));map.fitBounds(b,{padding:50,pitch:55,duration:0});
+  drawPins();
+ });
+}
+function drawPins(){
+ if(!map)return;
+ markers.forEach(m=>m.remove());markers=[];
+ (weather.length?weather:STOPS).forEach((w,i)=>{
+  const el=document.createElement('div');el.className='pin '+(w.st||'');el.textContent=i+1;
+  const html=`<b>${w.name}</b><br>${w.st?word[w.st]+'・':''}積雪 ${w.snow??'—'}cm・気温 ${w.temp??'—'}℃`;
+  markers.push(new mapboxgl.Marker({element:el}).setLngLat(COORD[w.name]).setPopup(new mapboxgl.Popup({offset:18}).setHTML(html)).addTo(map));
+ });
+}
 function renderRoute(){
+ drawPins();
  $('route').innerHTML=weather.map(r=>`<div class="leg"><h3>${r.name}<span class="pill ${r.st}">${word[r.st]}</span></h3>
   <p>積雪 ${r.snow}cm　${r.falling?'いま雪が降っています。':''}${r.msg}</p>
   ${r.st==='stop'&&r.alt?`<p>かわりに：${r.alt}</p>`:''}
@@ -241,6 +287,7 @@ function renderFeed(){
 
 /* 画面の切りかえ */
 function show(vname){
+ if(vname==='route'){setTimeout(()=>{initMap();if(map)map.resize()},50)}
  $('vfeed').hidden=vname!=='feed';$('vroute').hidden=vname!=='route';
  document.querySelectorAll('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===vname));
  window.scrollTo(0,0);
